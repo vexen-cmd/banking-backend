@@ -1,6 +1,7 @@
 const userModel = require("../user.model/user.model");
 const jwt = require("jsonwebtoken");
-const bcrypt = require("bcryptjs");
+// const bcrypt = require("bcryptjs");
+const emailSender = require('../services/email.services')
 require("dotenv").config();
 
 async function userRegister(req, res) {
@@ -30,6 +31,9 @@ async function userRegister(req, res) {
       name: user.name,
     },
   });
+
+  await emailSender.regisMail(user.email , user.name)
+
 }
 
 async function loginUser(req, res) {
@@ -42,7 +46,9 @@ async function loginUser(req, res) {
 
   if (!user) return res.status(404).json({ message: "not a valid user" });
 
-  const isPasswordValid = await bcrypt.compare(password, user.password);
+  // const isPasswordValid = await bcrypt.compare(password, user.password);
+  const isPasswordValid = await user.comparePassword(password)
+  
 
   if (!isPasswordValid) {
     return res.status(400).json({ message: "unauth" });

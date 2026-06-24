@@ -8,7 +8,7 @@ const userSchema = new mongoose.Schema({
         lowercase:true,
         trim:true,
         match:[/[\w.-]+@[\w.-]+\.\w+/,"please enter a valid email"],
-        maxlength: [20, "Too long"],
+        maxlength: [40, "Too long"],
         unique:[true,"email already in use"]
     },
     name:{
