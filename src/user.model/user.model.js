@@ -20,7 +20,10 @@ const userSchema = new mongoose.Schema({
         required:[true,"enter password"],
         minlength:[6,"password should be atleast 6 digit long "],
         select:false
-    }
+    },
+
+},{
+    timestamps:true
 })
 
 userSchema.pre("save", async function () {
