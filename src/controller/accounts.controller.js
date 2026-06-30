@@ -13,7 +13,7 @@ async function account(req, res) {
     user: user._id,
   });
 
-  res.send(account);
+  res.status(200).json({message:"account logged in" , user:user});
 }
 
 module.exports = account;
