@@ -1,5 +1,3 @@
-// here itll have a list of users who did their part
-
 const mongoose = require("mongoose")
 
 const ledgerSchema = new mongoose.Schema({
@@ -23,10 +21,12 @@ const ledgerSchema = new mongoose.Schema({
         immutable:true
     },
     type:{
-        type:String,
-        enum:{value:["CREDIT","DEBIT"]},
-        required:true,
-        immutable:true
+      type:String,
+      enum:{
+        values:["CREDIT","DEBIT"]
+      },
+      required:true,
+      immutable:true
     }
 },{
     timestamps:true
