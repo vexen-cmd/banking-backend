@@ -1,35 +1,86 @@
 const mongoose = require("mongoose");
+const ledgerModel = require("../user.model/ledger.model");
 
-const accountSchema = new mongoose.Schema({
-  user: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "user",
-    required: [true, "it has to be associated with a user"],
-    index:true 
-    //An index gives MongoDB a fast lookup table for a field, so it doesn't have to scan every document to find matching values. 
-  },
-
-  status: {
-    type:String,
-    enum: {
-      values: ["ACTIVE", "FROZEN", "CLOSED"],
+const accountSchema = new mongoose.Schema(
+  {
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "user",
+      required: [true, "it has to be associated with a user"],
+      index: true,
+      //An index gives MongoDB a fast lookup table for a field, so it doesn't have to scan every document to find matching values.
     },
-    default:"ACTIVE"
-  },
 
-  currency: {
-    type: String,
-    required: true,
-    default: "INR",
-  },
-},{
-    timestamps:true
-});
+    status: {
+      type: String,
+      enum: {
+        values: ["ACTIVE", "FROZEN", "CLOSED"],
+      },
+      default: "ACTIVE",
+    },
 
-accountSchema.index({user:1,status:1})
+    currency: {
+      type: String,
+      required: true,
+      default: "INR",
+    },
+  },
+  {
+    timestamps: true,
+  },
+);
+
+accountSchema.index({ user: 1, status: 1 });
 
 // Without a compound index, MongoDB finds the matching user and then checks each matching document for the status. With a compound index, MongoDB can directly look up the combination of user and status, so it does much less checking.
 
-const accountModel = mongoose.model("account",accountSchema)
+accountSchema.methods.getBalance = async function () {
+  const balanceData = await ledgerModel.aggregate([
+    {
+      $match: { account: this._id },
+    },
+    {
+      $group: {
+        _id: null,
+        totalDebit: {
+          $sum: {
+            $cond: [
+              {
+                $eq: ["$type", "DEBIT"],
+              },
+              "$amount",
+              0,
+            ],
+          },
+          totalCredit: {
+            $sum: {
+              $cond: [
+                {
+                  $eq: ["$type", "CREDIT"],
+                },
+                "$amount",
+                0,
+              ],
+            },
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        balance: { $subtract: ["$totalCredit", "$totalDebit"] }
+      },
+    },
+  ]);
 
-module.exports = accountModel
+  if(balanceData.length === 0){
+    return 0
+  }
+
+  return balanceData[0].balance
+};
+
+const accountModel = mongoose.model("account", accountSchema);
+
+module.exports = accountModel;
