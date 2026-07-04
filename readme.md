@@ -10,3 +10,5 @@ systemUser which ive created is like for exmaple if i want to deposit 500rs then
 now the bank will give me 500 rs in my acc 
 so system user is like a default id through which the initial money will be added to the user acc but first they have to deposit it else they cant
 
+- Prevented duplicate account creation using unique account validation.
+- Added initial funding transaction flow to allow users to receive starting balance.
