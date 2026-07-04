@@ -148,7 +148,7 @@ async function createInitialTransaction(req, res) {
   const creditLedgerEntry = await ledgerModel.create(
     [
       {
-        account: fromUserAccount._id,
+        account: toAccount,
         type: "CREDIT",
         amount,
         transactions: transaciton._id,
