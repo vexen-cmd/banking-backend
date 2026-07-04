@@ -5,19 +5,20 @@ const mongoose = require("mongoose");
 const emailSender = require("../services/email.services");
 
 async function createTransaction(req, res) {
-  const { fromAccout, toAccount, status, amount, idempotencyKey } = req.body;
+  const { fromAccount, toAccount, amount, idempotencyKey } = req.body;
 
-  if (!fromAccout || !toAccount || !status || !amount || !idempotencyKey) {
+  if (!fromAccount || !toAccount || !amount || !idempotencyKey) {
     return res.status(400).json({ message: "please enter all the details" });
   }
 
   const fromUserAccount = await accountModel.findOne({
-    _id: fromAccout,
+    _id: fromAccount,
   });
-
+  
   const toUserAccount = await accountModel.findOne({
     _id: toAccount,
   });
+
 
   if (!fromUserAccount || !toUserAccount) {
     return res.status(400).json({ message: "please enter right account" });
@@ -42,11 +43,11 @@ async function createTransaction(req, res) {
     }
   }
 
-  if (fromAccout.status !== "ACTIVE" || toAccount.status !== "ACTIVE") {
+  if (fromUserAccount.status !== "ACTIVE" || toUserAccount.status !== "ACTIVE") {
     return res.status(400).json({ message: "account has to be active" });
   }
 
-  const balance = await fromAccout.getBalance();
+  const balance = await fromUserAccount.getBalance();
 
   if (balance < amount) {
     return res.status(400).json({ message: `insufficient balance ${balance}` });
@@ -69,7 +70,7 @@ async function createTransaction(req, res) {
 
   const debitLedgerEntry = await ledgerModel.create(
     [{
-      account: fromAccout,
+      account: fromAccount,
       amount,
       transactions: transaction._id,
       type: "DEBIT",
@@ -79,7 +80,7 @@ async function createTransaction(req, res) {
 
   const creditLedgerEntry = await ledgerModel.create(
     [{
-      account: toAccout,
+      account: toAccount,
       amount,
       transactions: transaction._id,
       type: "CREDIT",
@@ -93,9 +94,9 @@ async function createTransaction(req, res) {
   await session.commitTransaction();
   session.endSession();
 
-  res.status(201).json((message = "transaciton done succesfully"), transaction);
+  res.status(201).json({message : "transaciton done succesfully", transaction});
 
-  await emailSender(req.user.email, req.user.name, amount, toAccount);
+  await emailSender.transactionMail(req.user.email, req.user.name, amount, toAccount);
 }
 
 async function createInitialTransaction(req, res) {
@@ -162,6 +163,8 @@ async function createInitialTransaction(req, res) {
 
   await session.commitTransaction();
   session.endSession();
+
+  // addons add a feature so that user gets a email whenveer bank sends him money
 
   res
     .status(201)
