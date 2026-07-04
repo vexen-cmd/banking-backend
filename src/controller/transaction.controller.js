@@ -14,11 +14,10 @@ async function createTransaction(req, res) {
   const fromUserAccount = await accountModel.findOne({
     _id: fromAccount,
   });
-  
+
   const toUserAccount = await accountModel.findOne({
     _id: toAccount,
   });
-
 
   if (!fromUserAccount || !toUserAccount) {
     return res.status(400).json({ message: "please enter right account" });
@@ -43,7 +42,10 @@ async function createTransaction(req, res) {
     }
   }
 
-  if (fromUserAccount.status !== "ACTIVE" || toUserAccount.status !== "ACTIVE") {
+  if (
+    fromUserAccount.status !== "ACTIVE" ||
+    toUserAccount.status !== "ACTIVE"
+  ) {
     return res.status(400).json({ message: "account has to be active" });
   }
 
@@ -58,45 +60,68 @@ async function createTransaction(req, res) {
 
   // created session so that if any steps went wrong the transaction doesnt happens
 
-  const transaction = new transactionModel(
-    {
-      fromAccount,
-      toAccount,
-      status: "PENDING",
-      amount,
-      idempotencyKey,
-    },
-  );
+  const transaction = (
+    await transactionModel.create(
+      [
+        {
+          fromAccount,
+          toAccount,
+          status: "PENDING",
+          amount,
+          idempotencyKey,
+        },
+      ],
+      { session },
+    )
+  )[0];
 
   const debitLedgerEntry = await ledgerModel.create(
-    [{
-      account: fromAccount,
-      amount,
-      transactions: transaction._id,
-      type: "DEBIT",
-    }],
+    [
+      {
+        account: fromAccount,
+        amount,
+        transactions: transaction._id,
+        type: "DEBIT",
+      },
+    ],
     { session },
   );
 
   const creditLedgerEntry = await ledgerModel.create(
-    [{
-      account: toAccount,
-      amount,
-      transactions: transaction._id,
-      type: "CREDIT",
-    }],
+    [
+      {
+        account: toAccount,
+        amount,
+        transactions: transaction._id,
+        type: "CREDIT",
+      },
+    ],
     { session },
   );
 
-  transaction.status = "COMPLETED";
-  await transaction.save({ session });
+  // transaction.status = "COMPLETED";
+  // await transaction.save({ session });
+  // console.log(transaction._id);
+
+  const updated = await transactionModel.findOneAndUpdate(
+    { _id: transaction._id },
+    { status: "COMPLETED" },
+    { session, returnDocument: "after"},
+  );
 
   await session.commitTransaction();
   session.endSession();
 
-  res.status(201).json({message : "transaciton done succesfully", transaction});
+  res
+    .status(201)
+    .json({ message: "transaciton done succesfully", transaction });
 
-  await emailSender.transactionMail(req.user.email, req.user.name, amount, toAccount);
+  await emailSender.transactionMail(
+    req.user.email,
+    req.user.name,
+    amount,
+    toAccount,
+  );
 }
 
 async function createInitialTransaction(req, res) {

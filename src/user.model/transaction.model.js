@@ -21,7 +21,7 @@ const transactionSchema = new mongoose.Schema({
 	status:{
 		type:String,
 		enum:{values:["PENDING","COMPLETED","FAILED","REVERSED"]},
-		default:"ACTIVE"
+		default:"PENDING"
 	},
 
 	amount:{

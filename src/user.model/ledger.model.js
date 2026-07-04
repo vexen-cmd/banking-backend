@@ -39,7 +39,7 @@ function preventLedgerModification() {
   throw new Error("ledger entries cannot be modified");
 }
 
-ledgerSchema.pre("findOneAndUpdate", preventLedgerModification);
+// ledgerSchema.pre("findOneAndUpdate", preventLedgerModification);
 ledgerSchema.pre("DeleteOne", preventLedgerModification);
 ledgerSchema.pre("remove", preventLedgerModification);
 ledgerSchema.pre("updateOne", preventLedgerModification);
