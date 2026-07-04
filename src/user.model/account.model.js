@@ -8,6 +8,7 @@ const accountSchema = new mongoose.Schema(
       ref: "user",
       required: [true, "it has to be associated with a user"],
       index: true,
+      unique:true
       //An index gives MongoDB a fast lookup table for a field, so it doesn't have to scan every document to find matching values.
     },
 
