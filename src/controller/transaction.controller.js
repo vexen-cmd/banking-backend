@@ -75,7 +75,7 @@ async function createTransaction(req, res) {
     )
   )[0];
 
-  const debitLedgerEntry = await ledgerModel.create(
+     await ledgerModel.create(
     [
       {
         account: fromAccount,
@@ -87,7 +87,7 @@ async function createTransaction(req, res) {
     { session },
   );
 
-  const creditLedgerEntry = await ledgerModel.create(
+   await ledgerModel.create(
     [
       {
         account: toAccount,
@@ -99,22 +99,23 @@ async function createTransaction(req, res) {
     { session },
   );
 
-  // transaction.status = "COMPLETED";
-  // await transaction.save({ session });
+  transaction.status = "COMPLETED";
+  await transaction.save({ session });
+
   // console.log(transaction._id);
 
-  const updated = await transactionModel.findOneAndUpdate(
-    { _id: transaction._id },
-    { status: "COMPLETED" },
-    { session, returnDocument: "after"},
-  );
+  // const updated = await transactionModel.findOneAndUpdate(
+  //   { _id: transaction._id },
+  //   { status: "COMPLETED" },
+  //   { session, returnDocument: "after"},
+  // );
 
   await session.commitTransaction();
   session.endSession();
 
   res
     .status(201)
-    .json({ message: "transaciton done succesfully", transaction });
+    .json({ message: "transaciton done succesfully", transaction:transaction });
 
   await emailSender.transactionMail(
     req.user.email,
@@ -151,15 +152,15 @@ async function createInitialTransaction(req, res) {
   const session = await mongoose.startSession();
   session.startTransaction();
 
-  const transaciton = new transactionModel({
+  const transaciton =( await transactionModel.create([{
     fromAccount: fromUserAccount._id,
     toAccount,
     status: "PENDING",
     amount,
     idempotencyKey,
-  });
+  }],{session})) [0];
 
-  const debitLedgerEntry = await ledgerModel.create(
+   await ledgerModel.create(
     [
       {
         account: fromUserAccount._id,
@@ -171,7 +172,7 @@ async function createInitialTransaction(req, res) {
     { session },
   );
 
-  const creditLedgerEntry = await ledgerModel.create(
+   await ledgerModel.create(
     [
       {
         account: toAccount,
