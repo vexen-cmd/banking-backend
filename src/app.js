@@ -8,6 +8,10 @@ const app = express()
 app.use(cookieParser())
 app.use(express.json())
 
+app.get("/",(req,res)=>{
+    res.send("ledger service is running ")
+})
+
 app.use("/api/auth",router)
 app.use("/api/accounts",accountRouter)
 app.use("/api/transaction",transactionRouter)
